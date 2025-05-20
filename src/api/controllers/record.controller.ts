@@ -6,11 +6,11 @@ import {
   Param,
   Query,
   Put,
-  InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Record } from '../schemas/record.schema';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
 import { RecordCategory, RecordFormat } from '../schemas/record.enum';
@@ -46,19 +46,20 @@ export class RecordController {
     @Param('id') id: string,
     @Body() updateRecordDto: UpdateRecordRequestDTO,
   ): Promise<Record> {
-    const record = await this.recordModel.findById(id);
-    if (!record) {
-      throw new InternalServerErrorException('Record not found');
-    }
+    const updated = await this.recordModel.findByIdAndUpdate(
+      id,
+      updateRecordDto,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
 
-    Object.assign(record, updateRecordDto);
-
-    const updated = await this.recordModel.updateOne(record);
     if (!updated) {
-      throw new InternalServerErrorException('Failed to update record');
+      throw new NotFoundException('Record not found');
     }
 
-    return record;
+    return updated;
   }
 
   @Get()
@@ -108,38 +109,32 @@ export class RecordController {
     @Query('format') format?: RecordFormat,
     @Query('category') category?: RecordCategory,
   ): Promise<Record[]> {
-    const allRecords = await this.recordModel.find().exec();
+    const query: FilterQuery<Record> = {};
 
-    const filteredRecords = allRecords.filter((record) => {
-      let match = true;
+    if (q) {
+      query.$or = [
+        { artist: { $regex: q, $options: 'i' } },
+        { album: { $regex: q, $options: 'i' } },
+        { category: { $regex: q, $options: 'i' } },
+      ];
+    }
 
-      if (q) {
-        match =
-          match &&
-          (record.artist.includes(q) ||
-            record.album.includes(q) ||
-            record.category.includes(q));
-      }
+    if (artist) {
+      query.artist = { $regex: artist, $options: 'i' };
+    }
 
-      if (artist) {
-        match = match && record.artist.includes(artist);
-      }
+    if (album) {
+      query.album = { $regex: album, $options: 'i' };
+    }
 
-      if (album) {
-        match = match && record.album.includes(album);
-      }
+    if (format) {
+      query.format = format;
+    }
 
-      if (format) {
-        match = match && record.format === format;
-      }
+    if (category) {
+      query.category = category;
+    }
 
-      if (category) {
-        match = match && record.category === category;
-      }
-
-      return match;
-    });
-
-    return filteredRecords;
+    return this.recordModel.find(query).exec();
   }
 }
