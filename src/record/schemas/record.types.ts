@@ -14,3 +14,13 @@ export enum RecordCategory {
   ALTERNATIVE = 'Alternative',
   INDIE = 'Indie',
 }
+
+export type Track = {
+  id: string;
+  title?: string;
+  firstReleaseDate: string;
+  disambiguation: string;
+  video: boolean;
+  length: number;
+  titleInTheRecording: string;
+};

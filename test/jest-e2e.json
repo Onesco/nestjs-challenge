@@ -12,5 +12,9 @@
   },
   "testPathIgnorePatterns": [
     "/node_modules/"
-  ]
+  ],
+  "moduleNameMapper": {
+    "y/common": "<rootDir>/../libs/common/src",
+    "y/common/(.*)": "<rootDir>/../libs/common/src/$1"
+  }
 }
