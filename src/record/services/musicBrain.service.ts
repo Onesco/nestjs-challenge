@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MusicBrainRecordResponse } from '../schemas/record.types';
+import { MusicBrainRecordResponse, TrackList } from '../types';
 
 class RequestError extends Error {
   info: any;
@@ -37,5 +37,21 @@ export class MusicBrainService {
       throw error;
     }
   }
+  getTrackList(data: MusicBrainRecordResponse): TrackList[] {
+    const tracks: TrackList[] = [];
+    for (const medium of data.media) {
+      medium.tracks.map((track) => {
+        tracks.push({
+          title: track.title,
+          length: track.length,
+          id: track.id,
+          firstReleaseDate: track.recording['first-release-date'],
+          disambiguation: track.recording.disambiguation,
+          titleInTheRecording: track.recording.title,
+          video: track.recording.video,
+        });
+      });
+    }
+    return tracks;
+  }
 }
-export { MusicBrainRecordResponse };

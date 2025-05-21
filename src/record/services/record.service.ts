@@ -5,7 +5,6 @@ import { RecordRepository } from '../record.repository';
 import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
 import { MusicBrainService } from './musicBrain.service';
-import { TrackListDto } from '../dtos/tracklist.dto';
 
 const musicBrainBaseUrl = process.env.MUSIC_BRAIN_BASEURL;
 
@@ -54,12 +53,14 @@ export class RecordService {
   async findByIdAndUpdate(id: string, updateRecordDto: UpdateRecordRequestDTO) {
     if (updateRecordDto.mbid) {
       const url = `${musicBrainBaseUrl}${updateRecordDto.mbid}?inc=recordings`;
+
       const [record, releaseRords] = await Promise.all([
         this.recordRepository.findOne({ _id: id }),
         this.musicBrain.fetch(url),
       ]);
+
       if (record.mbid !== updateRecordDto.mbid) {
-        const trackList = new TrackListDto(releaseRords).tracks;
+        const trackList = this.musicBrain.getTrackList(releaseRords);
 
         return this.recordRepository.findOneAndUpdate(
           { _id: id },
@@ -75,7 +76,7 @@ export class RecordService {
   async create(request: CreateRecordRequestDTO) {
     const url = `${musicBrainBaseUrl}${request.mbid}?inc=recordings`;
     const releaseRords = await this.musicBrain.fetch(url);
-    const trackList = new TrackListDto(releaseRords).tracks;
+    const trackList = this.musicBrain.getTrackList(releaseRords);
     return this.recordRepository.create({
       ...request,
       created: new Date(),

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '@app/common';
-import { RecordFormat, RecordCategory, TrackList } from './record.types';
+import { RecordFormat, RecordCategory, TrackList } from '../types/record.types';
 
 @Schema({ timestamps: true })
 export class Record extends AbstractDocument {

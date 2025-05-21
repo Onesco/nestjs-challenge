@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { RecordCategory, RecordFormat } from '../schemas/record.types';
+import { RecordCategory, RecordFormat } from '../types';
 
 export class RecordFilterDto {
   @ApiPropertyOptional({

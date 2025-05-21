@@ -4,7 +4,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Record } from '../schemas/record.schema';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
-import { RecordCategory, RecordFormat } from '../schemas/record.types';
+import { RecordCategory, RecordFormat } from '../types';
 
 describe('RecordController', () => {
   let recordController: RecordController;
