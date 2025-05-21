@@ -16,10 +16,10 @@ export class Record extends AbstractDocument {
   @Prop({ required: true })
   qty: number;
 
-  @Prop({ enum: RecordFormat, required: true })
+  @Prop({ enum: RecordFormat, type: String, required: true })
   format: RecordFormat;
 
-  @Prop({ enum: RecordCategory, required: true })
+  @Prop({ enum: RecordCategory, type: String, required: true })
   category: RecordCategory;
 
   @Prop({ default: Date.now })

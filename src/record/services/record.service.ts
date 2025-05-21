@@ -51,7 +51,22 @@ export class RecordService {
     }
     return this.recordRepository.find(query);
   }
-  findByIdAndUpdate(id: string, updateRecordDto: UpdateRecordRequestDTO) {
+  async findByIdAndUpdate(id: string, updateRecordDto: UpdateRecordRequestDTO) {
+    if (updateRecordDto.mbid) {
+      const url = `${musicBrainBaseUrl}${updateRecordDto.mbid}?inc=recordings`;
+      const [record, releaseRords] = await Promise.all([
+        this.recordRepository.findOne({ _id: id }),
+        this.musicBrain.fetch(url),
+      ]);
+      if (record.mbid !== updateRecordDto.mbid) {
+        const trackList = new TrackListDto(releaseRords).tracks;
+
+        return this.recordRepository.findOneAndUpdate(
+          { _id: id },
+          { $set: { ...updateRecordDto, trackList: trackList } },
+        );
+      }
+    }
     return this.recordRepository.findOneAndUpdate(
       { _id: id },
       { $set: updateRecordDto },
