@@ -5,6 +5,9 @@ import { RecordRepository } from '../record.repository';
 import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
 import { MusicBrainService } from './musicBrain.service';
+import { TrackListDto } from '../dtos/tracklist.dto';
+
+const musicBrainBaseUrl = process.env.MUSIC_BRAIN_BASEURL;
 
 export type RecordFilterOptions = {
   limit?: number;
@@ -54,10 +57,14 @@ export class RecordService {
       { $set: updateRecordDto },
     );
   }
-  create(request: CreateRecordRequestDTO) {
+  async create(request: CreateRecordRequestDTO) {
+    const url = `${musicBrainBaseUrl}${request.mbid}?inc=recordings`;
+    const releaseRords = await this.musicBrain.fetch(url);
+    const trackList = new TrackListDto(releaseRords).tracks;
     return this.recordRepository.create({
       ...request,
       created: new Date(),
+      trackList,
     });
   }
 }

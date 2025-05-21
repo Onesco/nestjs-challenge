@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '@app/common';
-import { RecordFormat, RecordCategory, Track } from './record.types';
+import { RecordFormat, RecordCategory, TrackList } from './record.types';
 
 @Schema({ timestamps: true })
 export class Record extends AbstractDocument {
@@ -32,7 +32,7 @@ export class Record extends AbstractDocument {
   mbid?: string;
 
   @Prop({ required: false })
-  trackList?: Array<Track>;
+  trackList?: TrackList[];
 }
 
 export const RecordSchema = SchemaFactory.createForClass(Record);

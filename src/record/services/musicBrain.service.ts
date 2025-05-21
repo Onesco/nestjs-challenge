@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MusicBrainRecordResponse } from '../schemas/record.types';
 
 class RequestError extends Error {
   info: any;
@@ -11,31 +12,9 @@ class RequestError extends Error {
   }
 }
 
-type Recording = {
-  disambiguation: string;
-  'first-release-date': string;
-  video: boolean;
-};
-
-type Track = {
-  position: number;
-  title: string;
-  length: number;
-  recording: Recording;
-  id: string;
-};
-
-type MusicBrainRecordResponse = {
-  media: {
-    'track-count': number;
-    position: number;
-    tracks: Track[];
-  };
-};
-
 @Injectable()
 export class MusicBrainService {
-  async fetch(url: string): Promise<{ data: MusicBrainRecordResponse }> {
+  async fetch(url: string): Promise<MusicBrainRecordResponse> {
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -59,3 +38,4 @@ export class MusicBrainService {
     }
   }
 }
+export { MusicBrainRecordResponse };
