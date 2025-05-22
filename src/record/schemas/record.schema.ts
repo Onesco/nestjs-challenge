@@ -4,10 +4,10 @@ import { RecordFormat, RecordCategory, TrackList } from '../types/record.types';
 
 @Schema({ timestamps: true })
 export class Record extends AbstractDocument {
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   artist: string;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   album: string;
 
   @Prop({ required: true })
@@ -16,10 +16,10 @@ export class Record extends AbstractDocument {
   @Prop({ required: true })
   qty: number;
 
-  @Prop({ enum: RecordFormat, type: String, required: true, index: true })
+  @Prop({ enum: RecordFormat, type: String, required: true })
   format: RecordFormat;
 
-  @Prop({ enum: RecordCategory, type: String, required: true, index: true })
+  @Prop({ enum: RecordCategory, type: String, required: true })
   category: RecordCategory;
 
   @Prop({ default: Date.now })
