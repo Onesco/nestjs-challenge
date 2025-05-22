@@ -1,4 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Record } from '../schemas/record.schema';
 import { FilterQuery } from 'mongoose';
 import { RecordRepository } from '../record.repository';
@@ -61,55 +66,69 @@ export class RecordService {
       query.category = category;
     }
     const skip = (page - 1) * limit;
-    return this.recordRepository.find(query, skip, limit);
+    try {
+      return this.recordRepository.find(query, skip, limit);
+    } catch (error) {
+      throw new NotFoundException(error?.message);
+    }
   }
 
   async findByIdAndUpdate(id: string, updateRecordDto: UpdateRecordRequestDTO) {
     const record = await this.recordRepository.findOne({ _id: id });
+    if (!record?._id) {
+      throw new NotFoundException(`can not update this record with id: ${id}`);
+    }
+    try {
+      if (updateRecordDto.mbid && record.mbid !== updateRecordDto.mbid) {
+        const cacheKey = `mbid:${updateRecordDto.mbid}`;
+        let releaseRecords = (await this.cacheManager.get(
+          cacheKey,
+        )) as MusicBrainRecordResponse;
 
-    if (updateRecordDto.mbid && record.mbid !== updateRecordDto.mbid) {
-      const cacheKey = `mbid:${updateRecordDto.mbid}`;
+        if (!releaseRecords) {
+          const url = `${musicBrainBaseUrl}${updateRecordDto.mbid}?inc=recordings`;
+          releaseRecords = await this.musicBrain.fetch(url);
+          await this.cacheManager.set(cacheKey, releaseRecords, 300);
+        }
+
+        const trackList = this.musicBrain.getTrackList(releaseRecords);
+
+        return this.recordRepository.findOneAndUpdate(
+          { _id: id },
+          { $set: { ...updateRecordDto, trackList } },
+        );
+      }
+
+      return this.recordRepository.findOneAndUpdate(
+        { _id: id },
+        { $set: updateRecordDto },
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(error?.message);
+    }
+  }
+  async create(request: CreateRecordRequestDTO) {
+    try {
+      const cacheKey = `mbid:${request.mbid}`;
       let releaseRecords = (await this.cacheManager.get(
         cacheKey,
       )) as MusicBrainRecordResponse;
 
       if (!releaseRecords) {
-        const url = `${musicBrainBaseUrl}${updateRecordDto.mbid}?inc=recordings`;
+        const url = `${musicBrainBaseUrl}${request.mbid}?inc=recordings`;
         releaseRecords = await this.musicBrain.fetch(url);
         await this.cacheManager.set(cacheKey, releaseRecords, 300);
       }
 
       const trackList = this.musicBrain.getTrackList(releaseRecords);
 
-      return this.recordRepository.findOneAndUpdate(
-        { _id: id },
-        { $set: { ...updateRecordDto, trackList } },
-      );
+      return this.recordRepository.create({
+        ...request,
+        created: new Date(),
+        trackList,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(error?.message);
     }
-
-    return this.recordRepository.findOneAndUpdate(
-      { _id: id },
-      { $set: updateRecordDto },
-    );
-  }
-  async create(request: CreateRecordRequestDTO) {
-    const cacheKey = `mbid:${request.mbid}`;
-    let releaseRecords = (await this.cacheManager.get(
-      cacheKey,
-    )) as MusicBrainRecordResponse;
-
-    if (!releaseRecords) {
-      const url = `${musicBrainBaseUrl}${request.mbid}?inc=recordings`;
-      releaseRecords = await this.musicBrain.fetch(url);
-      await this.cacheManager.set(cacheKey, releaseRecords, 300);
-    }
-
-    const trackList = this.musicBrain.getTrackList(releaseRecords);
-
-    return this.recordRepository.create({
-      ...request,
-      created: new Date(),
-      trackList,
-    });
   }
 }
