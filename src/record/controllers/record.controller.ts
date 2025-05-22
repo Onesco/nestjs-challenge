@@ -36,7 +36,23 @@ export class RecordController {
     description: 'List of records',
     type: [Record],
   })
-  async findAll(@Query() query: RecordFilterDto): Promise<Record[]> {
-    return this.recordService.findAll(query);
+  async findAll(
+    @Query('q') q?: RecordFilterDto['q'],
+    @Query('artist') artist?: RecordFilterDto['artist'],
+    @Query('album') album?: RecordFilterDto['album'],
+    @Query('format') format?: RecordFilterDto['format'],
+    @Query('category') category?: RecordFilterDto['category'],
+    @Query('page') page?: RecordFilterDto['page'],
+    @Query('limit') limit?: RecordFilterDto['limit'],
+  ): Promise<Record[]> {
+    return this.recordService.findAll({
+      q,
+      artist,
+      album,
+      format,
+      category,
+      page,
+      limit,
+    });
   }
 }

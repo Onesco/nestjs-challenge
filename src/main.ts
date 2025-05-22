@@ -11,8 +11,10 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true,
       whitelist: true,
+      forbidNonWhitelisted: false,
     }),
   );
+  app.enableCors();
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Record API')

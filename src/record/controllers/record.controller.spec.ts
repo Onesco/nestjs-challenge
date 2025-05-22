@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RecordController } from './record.controller';
-import { RecordService } from '../services/record.service';
+import { RecordFilterOptions, RecordService } from '../services/record.service';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
 import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
-import { RecordFilterDto } from '../dtos/filter-record.dto';
 import { Record } from '../schemas/record.schema';
 import { RecordCategory, RecordFormat } from '../types';
 
@@ -75,7 +74,15 @@ describe('RecordController', () => {
 
   describe('findAll', () => {
     it('should return an array of records with optional filters', async () => {
-      const filters: RecordFilterDto = { artist: 'Amazing test Artist' };
+      const filters = {
+        artist: 'Amazing test Artist',
+        q: undefined,
+        album: undefined,
+        format: undefined,
+        category: undefined,
+        page: undefined,
+        limit: undefined,
+      };
       const recordList = [
         {
           _id: '1',
@@ -90,7 +97,15 @@ describe('RecordController', () => {
 
       mockRecordService.findAll.mockResolvedValue(recordList);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(
+        filters.q,
+        filters.artist,
+        filters.album,
+        filters.format,
+        filters.category,
+        filters.page,
+        filters.limit,
+      );
       expect(result).toEqual(recordList);
       expect(service.findAll).toHaveBeenCalledWith(filters);
     });
