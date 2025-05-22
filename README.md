@@ -10,13 +10,18 @@ This is a **NestJS** application starter with MongoDB integration. If necessary,
 ```bash
 $ npm install
 ````
+### copy and update env variables
+copie the env variables in the .env.example and update the values. For the `RABBITMQ_DEFAULT_USER` and `RABBITMQ_DEFAULT_USER` you can use `admin` but feel free to change it.
 
-### Docker for MongoDB Emulator
-To use the MongoDB Emulator, you can start it using Docker:
+```bash
+$ cp .env.example .env
+````
+### Docker for MongoDB Emulator, Redis and Rabbit MQ
+To use all the docker containers Emulator, you can start it using Docker:
 ```
-npm run mongo:start
+npm run container:start
 ```
-This will start a MongoDB instance running on your local machine. You can customize the settings in the Docker setup by modifying the docker-compose-mongo.yml if necessary. In the current configuration, you will have a MongoDB container running, which is accessible at localhost:27017.
+This will start the following docker contanains (MongoDB, Redis, and Rabbit MQ) instance running on your local machine. You can customize the settings in the Docker setup bsy modifying the docker-compose-mongo.yml if necessary. In the current configuration, you will have a MongoDB container running, which is accessible at localhost:27017.
 This mongo url will be necessary on the .env file, with example as follows:
 
 ```

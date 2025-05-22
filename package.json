@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"libs/**/*.ts\"",
-    "mongo:start": "docker compose -f ./docker-compose-mongo.yml up -d",
+    "containers:start": "docker compose -f ./docker-compose-mongo.yml up -d",
     "rmq:start": "docker compose -f 'docker-compose-mongo.yml' up -d --build 'rabbitmq'",
     "redis:start":"docker compose -f 'docker-compose-mongo.yml' up -d --build 'redis'",
     "start": "nest start",
