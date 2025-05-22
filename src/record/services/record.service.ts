@@ -109,23 +109,29 @@ export class RecordService {
   }
   async create(request: CreateRecordRequestDTO) {
     try {
-      const cacheKey = `mbid:${request.mbid}`;
-      let releaseRecords = (await this.cacheManager.get(
-        cacheKey,
-      )) as MusicBrainRecordResponse;
+      if (request.mbid) {
+        const cacheKey = `mbid:${request.mbid}`;
+        let releaseRecords = (await this.cacheManager.get(
+          cacheKey,
+        )) as MusicBrainRecordResponse;
 
-      if (!releaseRecords) {
-        const url = `${musicBrainBaseUrl}${request.mbid}?inc=recordings`;
-        releaseRecords = await this.musicBrain.fetch(url);
-        await this.cacheManager.set(cacheKey, releaseRecords, 300);
+        if (!releaseRecords) {
+          const url = `${musicBrainBaseUrl}${request.mbid}?inc=recordings`;
+          releaseRecords = await this.musicBrain.fetch(url);
+          await this.cacheManager.set(cacheKey, releaseRecords, 300);
+        }
+
+        const trackList = this.musicBrain.getTrackList(releaseRecords);
+
+        return this.recordRepository.create({
+          ...request,
+          created: new Date(),
+          trackList,
+        });
       }
-
-      const trackList = this.musicBrain.getTrackList(releaseRecords);
-
       return this.recordRepository.create({
         ...request,
         created: new Date(),
-        trackList,
       });
     } catch (error) {
       throw new InternalServerErrorException(error?.message);
