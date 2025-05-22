@@ -14,7 +14,8 @@
     "/node_modules/"
   ],
   "moduleNameMapper": {
-    "y/common": "<rootDir>/../libs/common/src",
-    "y/common/(.*)": "<rootDir>/../libs/common/src/$1"
+    "@app/common": "<rootDir>/../libs/common/src",
+    "@app/common/(.*)": "<rootDir>/../libs/common/src/$1",
+    "^src/(.*)$": "<rootDir>/../src/$1"
   }
 }
