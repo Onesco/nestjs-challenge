@@ -4,10 +4,10 @@ import { RecordFormat, RecordCategory, TrackList } from '../types/record.types';
 
 @Schema({ timestamps: true })
 export class Record extends AbstractDocument {
-  @Prop({ required: true })
+  @Prop({ required: true, index: true })
   artist: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: true })
   album: string;
 
   @Prop({ required: true })
@@ -16,10 +16,10 @@ export class Record extends AbstractDocument {
   @Prop({ required: true })
   qty: number;
 
-  @Prop({ enum: RecordFormat, type: String, required: true })
+  @Prop({ enum: RecordFormat, type: String, required: true, index: true })
   format: RecordFormat;
 
-  @Prop({ enum: RecordCategory, type: String, required: true })
+  @Prop({ enum: RecordCategory, type: String, required: true, index: true })
   category: RecordCategory;
 
   @Prop({ default: Date.now })
@@ -36,3 +36,11 @@ export class Record extends AbstractDocument {
 }
 
 export const RecordSchema = SchemaFactory.createForClass(Record);
+
+RecordSchema.index({ artist: 1 }, { collation: { locale: 'en', strength: 2 } });
+RecordSchema.index({ album: 1 }, { collation: { locale: 'en', strength: 2 } });
+RecordSchema.index({ format: 1 }, { collation: { locale: 'en', strength: 2 } });
+RecordSchema.index(
+  { category: 1 },
+  { collation: { locale: 'en', strength: 2 } },
+);
