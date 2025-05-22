@@ -17,6 +17,5 @@
     "@app/common": "<rootDir>/../libs/common/src",
     "@app/common/(.*)": "<rootDir>/../libs/common/src/$1",
     "^src/(.*)$": "<rootDir>/../src/$1"
-  },
-  "NODE_ENV": "test"
+  }
 }

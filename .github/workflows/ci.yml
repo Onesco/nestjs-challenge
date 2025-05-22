@@ -43,7 +43,7 @@ jobs:
 
       - name: Run E2E Tests
         env:
-          MONGO_URI: mongodb://localhost:27017/test-db
+          MONGO_URL: mongodb://localhost:27017/test-db
         run: npm run test:e2e
 
   build:
@@ -64,3 +64,17 @@ jobs:
 
       - name: Build the app
         run: npm run build
+  
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Upload `public` folder as GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2      
