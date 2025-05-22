@@ -6,6 +6,7 @@ import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
 import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
 import { Record } from '../schemas/record.schema';
 import { RecordCategory, RecordFormat } from '../types';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('RecordService', () => {
   let service: RecordService;
@@ -24,12 +25,19 @@ describe('RecordService', () => {
     getTrackList: jest.fn(),
   };
 
+  const mockCacheManager = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RecordService,
         { provide: RecordRepository, useValue: mockRepository },
         { provide: MusicBrainService, useValue: mockMusicBrainService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
