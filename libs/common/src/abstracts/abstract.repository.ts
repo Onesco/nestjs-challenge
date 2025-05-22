@@ -1,5 +1,11 @@
 import { Logger, NotFoundException } from '@nestjs/common';
-import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
+import {
+  ClientSession,
+  FilterQuery,
+  Model,
+  Types,
+  UpdateQuery,
+} from 'mongoose';
 import { AbstractDocument } from './abstract.schema';
 
 export abstract class AbstractRepository<TDocument extends AbstractDocument> {
@@ -26,6 +32,24 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     }
 
     return document;
+  }
+
+  async findOneWithSession(
+    filterQuery: FilterQuery<TDocument>,
+    session: ClientSession,
+  ) {
+    return await this.model.findOne(filterQuery).session(session);
+  }
+
+  async saveWithSession(
+    document: Omit<TDocument, '_id'>,
+    session: ClientSession,
+  ) {
+    const newDocument = new this.model({
+      ...document,
+      _id: new Types.ObjectId(),
+    });
+    return await newDocument.save({ session });
   }
 
   async findOneAndUpdate(
