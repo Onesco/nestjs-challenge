@@ -2,13 +2,23 @@ name: CI Pipeline
 
 on:
   push:
-    branches: '*'
-  pull_request:
-    branches: [ main ]
+    branches:
+      - '**'
+
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5
 
     steps:
       - name: Checkout code
@@ -32,6 +42,8 @@ jobs:
         run: npm run test:cov
 
       - name: Run E2E Tests
+        env:
+          MONGO_URI: mongodb://localhost:27017/test-db
         run: npm run test:e2e
 
   build:

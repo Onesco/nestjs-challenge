@@ -8,56 +8,65 @@ import { Model } from 'mongoose';
 import { RecordFormat, RecordCategory } from '../src/record/types';
 import { MusicBrainService } from '../src/record/services/musicBrain.service';
 
+jest.setTimeout(15000);
+
 describe('RecordController (e2e) with partial MusicBrainService mock', () => {
   let app: INestApplication;
   let recordModel: Model<Record>;
   const createdRecordIds: string[] = [];
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    try {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
 
-    const realMusicBrainService =
-      moduleFixture.get<MusicBrainService>(MusicBrainService);
+      const realMusicBrainService =
+        moduleFixture.get<MusicBrainService>(MusicBrainService);
 
-    jest.spyOn(realMusicBrainService, 'fetch').mockResolvedValue({
-      media: [
-        {
-          tracks: [
-            {
-              title: 'Mocked Track 1',
-              position: 0,
-              recording: {
-                disambiguation: 'fake',
-                'first-release-date': 'some date',
-                video: true,
-                title: 'some title',
+      jest.spyOn(realMusicBrainService, 'fetch').mockResolvedValue({
+        media: [
+          {
+            tracks: [
+              {
+                title: 'Mocked Track 1',
+                position: 0,
+                recording: {
+                  disambiguation: 'fake',
+                  'first-release-date': 'some date',
+                  video: true,
+                  title: 'some title',
+                },
+                length: 3244,
+                id: 'some-id-1',
               },
-              length: 3244,
-              id: 'some id',
-            },
-            {
-              title: 'Mocked Track 2',
-              position: 1,
-              recording: {
-                disambiguation: 'fake',
-                'first-release-date': 'some date',
-                video: true,
-                title: 'some title',
+              {
+                title: 'Mocked Track 2',
+                position: 1,
+                recording: {
+                  disambiguation: 'fake',
+                  'first-release-date': 'some date',
+                  video: true,
+                  title: 'some title',
+                },
+                length: 3244,
+                id: 'some-id-2',
               },
-              length: 3244,
-              id: 'some id',
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      });
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
+      app = moduleFixture.createNestApplication();
+      await app.init();
 
-    recordModel = app.get<Model<Record>>(getModelToken(Record.name));
+      recordModel = app.get<Model<Record>>(getModelToken(Record.name));
+
+      await recordModel.deleteMany({});
+    } catch (err) {
+      console.error('beforeAll setup failed:', err);
+      throw err;
+    }
   });
 
   afterEach(async () => {
@@ -69,16 +78,23 @@ describe('RecordController (e2e) with partial MusicBrainService mock', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    try {
+      if (recordModel) await recordModel.deleteMany({});
+      if (app) await app.close();
+    } catch (err) {
+      console.error('afterAll teardown failed:', err);
+    }
   });
 
   it('should create a record with real getTrackList and mocked fetch', async () => {
+    const uniqueId = Math.random().toString(36).substring(2, 8);
+
     const createRecordDto = {
-      artist: 'Partial Mock Band',
-      album: 'Partial Mock Album',
+      artist: `Partial Mock Band ${uniqueId}`,
+      album: `Partial Mock Album ${uniqueId}`,
       price: 40,
       qty: 5,
-      mbid: 'mocked-partial-123',
+      mbid: `mocked-partial-${uniqueId}`,
       format: RecordFormat.VINYL,
       category: RecordCategory.CLASSICAL,
     };
@@ -94,7 +110,7 @@ describe('RecordController (e2e) with partial MusicBrainService mock', () => {
       {
         disambiguation: 'fake',
         firstReleaseDate: 'some date',
-        id: 'some id',
+        id: 'some-id-1',
         length: 3244,
         title: 'Mocked Track 1',
         titleInTheRecording: 'some title',
@@ -103,23 +119,25 @@ describe('RecordController (e2e) with partial MusicBrainService mock', () => {
       {
         disambiguation: 'fake',
         firstReleaseDate: 'some date',
-        id: 'some id',
+        id: 'some-id-2',
         length: 3244,
         title: 'Mocked Track 2',
         titleInTheRecording: 'some title',
         video: true,
       },
     ]);
-    expect(response.body.artist).toBe('Partial Mock Band');
+    expect(response.body.artist).toContain('Partial Mock Band');
   });
 
   it('should filter by artist after creation', async () => {
+    const uniqueId = Math.random().toString(36).substring(2, 8);
+
     const createRecordDto = {
-      artist: 'Filter Band',
-      album: 'Filtered Album',
+      artist: `Filter Band ${uniqueId}`,
+      album: `Filtered Album ${uniqueId}`,
       price: 20,
       qty: 15,
-      mbid: 'mocked-mbid-999',
+      mbid: `mocked-mbid-${uniqueId}`,
       format: RecordFormat.CD,
       category: RecordCategory.JAZZ,
     };
@@ -132,9 +150,9 @@ describe('RecordController (e2e) with partial MusicBrainService mock', () => {
     createdRecordIds.push(createResponse.body._id);
 
     const filterResponse = await request(app.getHttpServer())
-      .get('/records?artist=Filter Band')
+      .get(`/records?artist=Filter Band ${uniqueId}`)
       .expect(200);
 
-    expect(filterResponse.body[0].artist).toBe('Filter Band');
+    expect(filterResponse.body[0].artist).toBe(`Filter Band ${uniqueId}`);
   });
 });
