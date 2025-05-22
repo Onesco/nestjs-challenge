@@ -3,6 +3,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { Connection } from 'mongoose';
 import { Order } from './schemas/order.schema';
@@ -11,6 +12,8 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { RecordRepository } from 'src/record/record.repository';
 import { OrderRepository } from './order.repository';
 import { OrderStatus } from './types/order.types';
+import { ClientProxy } from '@nestjs/microservices';
+import { ORDER_EVENTS_TYPE } from '../event.types';
 
 @Injectable()
 export class OrderService {
@@ -18,6 +21,8 @@ export class OrderService {
     private readonly recordRepository: RecordRepository,
     private readonly orderRepository: OrderRepository,
     @InjectConnection() private readonly connection: Connection,
+    @Inject(ORDER_EVENTS_TYPE.ORDER_CREATED)
+    private readonly eventClient: ClientProxy,
   ) {}
 
   async createOrder(dto: CreateOrderDto): Promise<Order> {
@@ -55,6 +60,17 @@ export class OrderService {
       );
 
       await session.commitTransaction();
+
+      // emit event could be read via any other service... for demo
+      // will add notification service to  read the orders created
+      // events can also be seen emitted via the rmq adm dashboard ('http://localhost:15672')
+      this.eventClient.emit('order.created', {
+        orderId: order._id,
+        recordId: order.recordId,
+        quantity: order.qty,
+        createdAt: order.created,
+      });
+
       return order;
     } catch (error) {
       await session.abortTransaction();

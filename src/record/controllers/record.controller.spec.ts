@@ -1,80 +1,98 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RecordController } from './record.controller';
-import { getModelToken } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Record } from '../schemas/record.schema';
+import { RecordService } from '../services/record.service';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
+import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
+import { RecordFilterDto } from '../dtos/filter-record.dto';
+import { Record } from '../schemas/record.schema';
 import { RecordCategory, RecordFormat } from '../types';
 
 describe('RecordController', () => {
-  let recordController: RecordController;
-  let recordModel: Model<Record>;
+  let controller: RecordController;
+  let service: RecordService;
+
+  const mockRecordService = {
+    create: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findAll: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RecordController],
-      providers: [
-        {
-          provide: getModelToken('Record'),
-          useValue: {
-            new: jest.fn().mockResolvedValue({}),
-            constructor: jest.fn().mockResolvedValue({}),
-            find: jest.fn(),
-            findById: jest.fn(),
-            save: jest.fn(),
-            create: jest.fn(),
-          },
-        },
-      ],
+      providers: [{ provide: RecordService, useValue: mockRecordService }],
     }).compile();
 
-    recordController = module.get<RecordController>(RecordController);
-    recordModel = module.get<Model<Record>>(getModelToken('Record'));
+    controller = module.get<RecordController>(RecordController);
+    service = module.get<RecordService>(RecordService);
   });
 
-  it('should create a new record', async () => {
-    const createRecordDto: CreateRecordRequestDTO = {
-      artist: 'Test',
-      album: 'Test Record',
-      price: 100,
-      qty: 10,
-      format: RecordFormat.VINYL,
-      category: RecordCategory.ALTERNATIVE,
-    };
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
-    const savedRecord = {
-      _id: '1',
-      name: 'Test Record',
-      price: 100,
-      qty: 10,
-    };
+  describe('create', () => {
+    it('should create a new record', async () => {
+      const dto: CreateRecordRequestDTO = {
+        artist: 'Amazing test Artist',
+        album: 'The Greatest Hits',
+        price: 29.99,
+        qty: 10,
+        format: RecordFormat.VINYL,
+        category: RecordCategory.ROCK,
+      };
 
-    jest.spyOn(recordModel, 'create').mockResolvedValue(savedRecord as any);
+      const createdRecord = { _id: '1', ...dto } as unknown as Record;
+      mockRecordService.create.mockResolvedValue(createdRecord);
 
-    const result = await recordController.create(createRecordDto);
-    expect(result).toEqual(savedRecord);
-    expect(recordModel.create).toHaveBeenCalledWith({
-      artist: 'Test',
-      album: 'Test Record',
-      price: 100,
-      qty: 10,
-      category: RecordCategory.ALTERNATIVE,
-      format: RecordFormat.VINYL,
+      const result = await controller.create(dto);
+      expect(result).toEqual(createdRecord);
+      expect(service.create).toHaveBeenCalledWith(dto);
     });
   });
 
-  it('should return an array of records', async () => {
-    const records = [
-      { _id: '1', name: 'Record 1', price: 100, qty: 10 },
-      { _id: '2', name: 'Record 2', price: 200, qty: 20 },
-    ];
+  describe('update', () => {
+    it('should update an existing record', async () => {
+      const id = 'abc123';
+      const dto: UpdateRecordRequestDTO = { price: 34.99 };
+      const updatedRecord = {
+        _id: id,
+        artist: 'John Doe',
+        album: 'The Greatest Hits',
+        price: 34.99,
+        qty: 10,
+        format: 'Vinyl',
+        category: 'Rock',
+      } as unknown as Record;
 
-    jest.spyOn(recordModel, 'find').mockReturnValue({
-      exec: jest.fn().mockResolvedValue(records),
-    } as any);
+      mockRecordService.findByIdAndUpdate.mockResolvedValue(updatedRecord);
 
-    const result = await recordController.findAll();
-    expect(result).toEqual(records);
-    expect(recordModel.find).toHaveBeenCalled();
+      const result = await controller.update(id, dto);
+      expect(result).toEqual(updatedRecord);
+      expect(service.findByIdAndUpdate).toHaveBeenCalledWith(id, dto);
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return an array of records with optional filters', async () => {
+      const filters: RecordFilterDto = { artist: 'Amazing test Artist' };
+      const recordList = [
+        {
+          _id: '1',
+          artist: 'Amazing test Artist',
+          album: 'First Album',
+          price: 19.99,
+          qty: 5,
+          format: 'CD',
+          category: 'Pop',
+        },
+      ] as unknown as Record[];
+
+      mockRecordService.findAll.mockResolvedValue(recordList);
+
+      const result = await controller.findAll(filters);
+      expect(result).toEqual(recordList);
+      expect(service.findAll).toHaveBeenCalledWith(filters);
+    });
   });
 });

@@ -7,12 +7,29 @@ import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { OrderRepository } from './order.repository';
 import { RecordRepository } from 'src/record/record.repository';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ORDER_EVENTS_TYPE } from '../event.types';
+
+const RMQ_URI = process.env.RMQ_URI;
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: Record.name, schema: RecordSchema },
+    ]),
+    ClientsModule.register([
+      {
+        name: ORDER_EVENTS_TYPE.ORDER_CREATED,
+        transport: Transport.RMQ,
+        options: {
+          urls: [RMQ_URI],
+          queue: 'order_queue',
+          queueOptions: {
+            durable: true,
+          },
+        },
+      },
     ]),
   ],
   controllers: [OrderController],

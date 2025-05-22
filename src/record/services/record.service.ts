@@ -52,19 +52,16 @@ export class RecordService {
   }
   async findByIdAndUpdate(id: string, updateRecordDto: UpdateRecordRequestDTO) {
     if (updateRecordDto.mbid) {
-      const url = `${musicBrainBaseUrl}${updateRecordDto.mbid}?inc=recordings`;
-
-      const [record, releaseRords] = await Promise.all([
-        this.recordRepository.findOne({ _id: id }),
-        this.musicBrain.fetch(url),
-      ]);
+      const record = await this.recordRepository.findOne({ _id: id });
 
       if (record.mbid !== updateRecordDto.mbid) {
+        const url = `${musicBrainBaseUrl}${updateRecordDto.mbid}?inc=recordings`;
+        const releaseRords = await this.musicBrain.fetch(url);
         const trackList = this.musicBrain.getTrackList(releaseRords);
 
         return this.recordRepository.findOneAndUpdate(
           { _id: id },
-          { $set: { ...updateRecordDto, trackList: trackList } },
+          { $set: { ...updateRecordDto, trackList } },
         );
       }
     }
