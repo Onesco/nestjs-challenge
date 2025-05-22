@@ -23,9 +23,11 @@ async function bootstrap() {
     .setDescription('The record management API')
     .build();
 
-  app.useStaticAssets(join(__dirname, '..', 'public'), {
-    index: 'index.html',
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    app.useStaticAssets(join(__dirname, '..', 'public'), {
+      index: 'index.html',
+    });
+  }
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
