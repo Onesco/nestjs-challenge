@@ -36,3 +36,11 @@ export class Record extends AbstractDocument {
 }
 
 export const RecordSchema = SchemaFactory.createForClass(Record);
+
+RecordSchema.index({ artist: 1 }, { collation: { locale: 'en', strength: 2 } });
+RecordSchema.index({ album: 1 }, { collation: { locale: 'en', strength: 2 } });
+RecordSchema.index({ format: 1 }, { collation: { locale: 'en', strength: 2 } });
+RecordSchema.index(
+  { category: 1 },
+  { collation: { locale: 'en', strength: 2 } },
+);
