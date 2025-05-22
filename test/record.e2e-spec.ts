@@ -2,29 +2,57 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { RecordFormat, RecordCategory } from '../src/record/types';
 import { getModelToken } from '@nestjs/mongoose';
 import { Record } from '../src/record/schemas/record.schema';
 import { Model } from 'mongoose';
+import { RecordFormat, RecordCategory } from '../src/record/types';
 import { MusicBrainService } from '../src/record/services/musicBrain.service';
 
-describe('RecordController (e2e)', () => {
+describe('RecordController (e2e) with partial MusicBrainService mock', () => {
   let app: INestApplication;
   let recordModel: Model<Record>;
   const createdRecordIds: string[] = [];
 
-  const mockMusicBrainService = {
-    fetch: jest.fn().mockResolvedValue({ recordings: ['mocked'] }),
-    getTrackList: jest.fn().mockReturnValue(['Track 1', 'Track 2']),
-  };
-
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    })
-      .overrideProvider(MusicBrainService)
-      .useValue(mockMusicBrainService)
-      .compile();
+    }).compile();
+
+    const realMusicBrainService =
+      moduleFixture.get<MusicBrainService>(MusicBrainService);
+
+    jest.spyOn(realMusicBrainService, 'fetch').mockResolvedValue({
+      media: [
+        {
+          tracks: [
+            {
+              title: 'Mocked Track 1',
+              position: 0,
+              recording: {
+                disambiguation: 'fake',
+                'first-release-date': 'some date',
+                video: true,
+                title: 'some title',
+              },
+              length: 3244,
+              id: 'some id',
+            },
+            {
+              title: 'Mocked Track 2',
+              position: 1,
+              recording: {
+                disambiguation: 'fake',
+                'first-release-date': 'some date',
+                video: true,
+                title: 'some title',
+              },
+              length: 3244,
+              id: 'some id',
+            },
+          ],
+        },
+      ],
+    });
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -44,15 +72,15 @@ describe('RecordController (e2e)', () => {
     await app.close();
   });
 
-  it('should create a new record with mocked trackList', async () => {
+  it('should create a record with real getTrackList and mocked fetch', async () => {
     const createRecordDto = {
-      artist: 'Mock Band',
-      album: 'Mock Album',
-      price: 25,
-      qty: 10,
-      mbid: 'mocked-mbid-1234',
+      artist: 'Partial Mock Band',
+      album: 'Partial Mock Album',
+      price: 40,
+      qty: 5,
+      mbid: 'mocked-partial-123',
       format: RecordFormat.VINYL,
-      category: RecordCategory.ROCK,
+      category: RecordCategory.CLASSICAL,
     };
 
     const response = await request(app.getHttpServer())
@@ -62,11 +90,27 @@ describe('RecordController (e2e)', () => {
 
     createdRecordIds.push(response.body._id);
 
-    expect(response.body.artist).toBe('Mock Band');
-    expect(response.body.album).toBe('Mock Album');
-    expect(response.body.trackList).toEqual(['Track 1', 'Track 2']);
-    expect(mockMusicBrainService.fetch).toHaveBeenCalled();
-    expect(mockMusicBrainService.getTrackList).toHaveBeenCalled();
+    expect(response.body.trackList).toEqual([
+      {
+        disambiguation: 'fake',
+        firstReleaseDate: 'some date',
+        id: 'some id',
+        length: 3244,
+        title: 'Mocked Track 1',
+        titleInTheRecording: 'some title',
+        video: true,
+      },
+      {
+        disambiguation: 'fake',
+        firstReleaseDate: 'some date',
+        id: 'some id',
+        length: 3244,
+        title: 'Mocked Track 2',
+        titleInTheRecording: 'some title',
+        video: true,
+      },
+    ]);
+    expect(response.body.artist).toBe('Partial Mock Band');
   });
 
   it('should filter by artist after creation', async () => {
