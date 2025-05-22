@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { RecordFormat, RecordCategory } from './record.enum';
+import { AbstractDocument } from '@app/common';
+import { RecordFormat, RecordCategory, TrackList } from '../types/record.types';
 
 @Schema({ timestamps: true })
-export class Record extends Document {
+export class Record extends AbstractDocument {
   @Prop({ required: true })
   artist: string;
 
@@ -16,20 +16,23 @@ export class Record extends Document {
   @Prop({ required: true })
   qty: number;
 
-  @Prop({ enum: RecordFormat, required: true })
+  @Prop({ enum: RecordFormat, type: String, required: true })
   format: RecordFormat;
 
-  @Prop({ enum: RecordCategory, required: true })
+  @Prop({ enum: RecordCategory, type: String, required: true })
   category: RecordCategory;
 
   @Prop({ default: Date.now })
   created: Date;
 
   @Prop({ default: Date.now })
-  lastModified: Date;
+  lastModified?: Date;
 
   @Prop({ required: false })
   mbid?: string;
+
+  @Prop({ required: false })
+  trackList?: TrackList[];
 }
 
 export const RecordSchema = SchemaFactory.createForClass(Record);

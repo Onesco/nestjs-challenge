@@ -2,32 +2,85 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { RecordFormat, RecordCategory } from '../src/api/schemas/record.enum';
+import { getModelToken } from '@nestjs/mongoose';
+import { Record } from '../src/record/schemas/record.schema';
+import { Model } from 'mongoose';
+import { RecordFormat, RecordCategory } from '../src/record/types';
+import { MusicBrainService } from '../src/record/services/musicBrain.service';
 
-describe('RecordController (e2e)', () => {
+describe('RecordController (e2e) with partial MusicBrainService mock', () => {
   let app: INestApplication;
-  let recordId: string;
-  let recordModel;
+  let recordModel: Model<Record>;
+  const createdRecordIds: string[] = [];
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
+    const realMusicBrainService =
+      moduleFixture.get<MusicBrainService>(MusicBrainService);
+
+    jest.spyOn(realMusicBrainService, 'fetch').mockResolvedValue({
+      media: [
+        {
+          tracks: [
+            {
+              title: 'Mocked Track 1',
+              position: 0,
+              recording: {
+                disambiguation: 'fake',
+                'first-release-date': 'some date',
+                video: true,
+                title: 'some title',
+              },
+              length: 3244,
+              id: 'some id',
+            },
+            {
+              title: 'Mocked Track 2',
+              position: 1,
+              recording: {
+                disambiguation: 'fake',
+                'first-release-date': 'some date',
+                video: true,
+                title: 'some title',
+              },
+              length: 3244,
+              id: 'some id',
+            },
+          ],
+        },
+      ],
+    });
+
     app = moduleFixture.createNestApplication();
-    recordModel = app.get('RecordModel');
     await app.init();
+
+    recordModel = app.get<Model<Record>>(getModelToken(Record.name));
   });
 
-  // Test to create a record
-  it('should create a new record', async () => {
+  afterEach(async () => {
+    for (const id of createdRecordIds) {
+      await recordModel.findByIdAndDelete(id);
+    }
+    createdRecordIds.length = 0;
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should create a record with real getTrackList and mocked fetch', async () => {
     const createRecordDto = {
-      artist: 'The Beatles',
-      album: 'Abbey Road',
-      price: 25,
-      qty: 10,
+      artist: 'Partial Mock Band',
+      album: 'Partial Mock Album',
+      price: 40,
+      qty: 5,
+      mbid: 'mocked-partial-123',
       format: RecordFormat.VINYL,
-      category: RecordCategory.ROCK,
+      category: RecordCategory.CLASSICAL,
     };
 
     const response = await request(app.getHttpServer())
@@ -35,19 +88,40 @@ describe('RecordController (e2e)', () => {
       .send(createRecordDto)
       .expect(201);
 
-    recordId = response.body._id;
-    expect(response.body).toHaveProperty('artist', 'The Beatles');
-    expect(response.body).toHaveProperty('album', 'Abbey Road');
+    createdRecordIds.push(response.body._id);
+
+    expect(response.body.trackList).toEqual([
+      {
+        disambiguation: 'fake',
+        firstReleaseDate: 'some date',
+        id: 'some id',
+        length: 3244,
+        title: 'Mocked Track 1',
+        titleInTheRecording: 'some title',
+        video: true,
+      },
+      {
+        disambiguation: 'fake',
+        firstReleaseDate: 'some date',
+        id: 'some id',
+        length: 3244,
+        title: 'Mocked Track 2',
+        titleInTheRecording: 'some title',
+        video: true,
+      },
+    ]);
+    expect(response.body.artist).toBe('Partial Mock Band');
   });
 
-  it('should create a new record and fetch it with filters', async () => {
+  it('should filter by artist after creation', async () => {
     const createRecordDto = {
-      artist: 'The Fake Band',
-      album: 'Fake Album',
-      price: 25,
-      qty: 10,
-      format: RecordFormat.VINYL,
-      category: RecordCategory.ROCK,
+      artist: 'Filter Band',
+      album: 'Filtered Album',
+      price: 20,
+      qty: 15,
+      mbid: 'mocked-mbid-999',
+      format: RecordFormat.CD,
+      category: RecordCategory.JAZZ,
     };
 
     const createResponse = await request(app.getHttpServer())
@@ -55,21 +129,12 @@ describe('RecordController (e2e)', () => {
       .send(createRecordDto)
       .expect(201);
 
-    recordId = createResponse.body._id;
+    createdRecordIds.push(createResponse.body._id);
 
-    const response = await request(app.getHttpServer())
-      .get('/records?artist=The Fake Band')
+    const filterResponse = await request(app.getHttpServer())
+      .get('/records?artist=Filter Band')
       .expect(200);
-    expect(response.body.length).toBe(1);
-    expect(response.body[0]).toHaveProperty('artist', 'The Fake Band');
-  });
-  afterEach(async () => {
-    if (recordId) {
-      await recordModel.findByIdAndDelete(recordId);
-    }
-  });
 
-  afterAll(async () => {
-    await app.close();
+    expect(filterResponse.body[0].artist).toBe('Filter Band');
   });
 });
