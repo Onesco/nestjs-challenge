@@ -70,8 +70,16 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     return document;
   }
 
-  async find(filterQuery: FilterQuery<TDocument>): Promise<TDocument[]> {
-    return this.model.find(filterQuery).lean<TDocument[]>(true);
+  async find(
+    filterQuery: FilterQuery<TDocument>,
+    skip?: number,
+    limit?: number,
+  ): Promise<TDocument[]> {
+    return this.model
+      .find(filterQuery)
+      .skip(skip)
+      .limit(limit)
+      .lean<TDocument[]>(true);
   }
 
   async findOneAndDelete(

@@ -53,26 +53,79 @@ describe('RecordService', () => {
   });
 
   describe('findAll', () => {
-    it('should return records based on query', async () => {
+    it('should return records based on artist query', async () => {
       const expectedRecords = [{ artist: 'Test' }] as Record[];
       mockRepository.find.mockResolvedValue(expectedRecords);
 
       const result = await service.findAll({ artist: 'Test' });
+
       expect(result).toEqual(expectedRecords);
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        artist: { $regex: 'Test', $options: 'i' },
-      });
+      expect(mockRepository.find).toHaveBeenCalledWith(
+        { artist: { $regex: 'Test', $options: 'i' } },
+        0,
+        10,
+      );
     });
 
     it('should support search with "q" param', async () => {
-      mockRepository.find.mockResolvedValue([{ album: 'Chill' }]);
+      const expectedRecords = [{ album: 'Chill' }];
+      mockRepository.find.mockResolvedValue(expectedRecords);
+
       const result = await service.findAll({ q: 'chill' });
+
       expect(mockRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          $or: expect.any(Array),
-        }),
+        {
+          $or: [
+            { artist: { $regex: 'chill', $options: 'i' } },
+            { album: { $regex: 'chill', $options: 'i' } },
+            { category: { $regex: 'chill', $options: 'i' } },
+            { format: { $regex: 'chill', $options: 'i' } },
+          ],
+        },
+        0,
+        10,
       );
-      expect(result).toEqual([{ album: 'Chill' }]);
+      expect(result).toEqual(expectedRecords);
+    });
+
+    it('should apply all filters and pagination', async () => {
+      const expectedRecords = [{ artist: 'Test', album: 'Album A' }];
+      mockRepository.find.mockResolvedValue(expectedRecords);
+
+      const result = await service.findAll({
+        artist: 'Test',
+        album: 'Album A',
+        format: 'Vinyl',
+        category: 'Rock',
+        page: 2,
+        limit: 5,
+      });
+
+      expect(result).toEqual(expectedRecords);
+      expect(mockRepository.find).toHaveBeenCalledWith(
+        {
+          artist: { $regex: 'Test', $options: 'i' },
+          album: { $regex: 'Album A', $options: 'i' },
+          format: 'Vinyl',
+          category: 'Rock',
+        },
+        5,
+        5,
+      );
+    });
+
+    it('should use default pagination if not provided', async () => {
+      const expectedRecords = [{ artist: 'No Pagination' }];
+      mockRepository.find.mockResolvedValue(expectedRecords);
+
+      const result = await service.findAll({ category: 'Jazz' });
+
+      expect(mockRepository.find).toHaveBeenCalledWith(
+        { category: 'Jazz' },
+        0,
+        10,
+      );
+      expect(result).toEqual(expectedRecords);
     });
   });
 

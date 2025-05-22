@@ -13,7 +13,7 @@ const musicBrainBaseUrl = process.env.MUSIC_BRAIN_BASEURL;
 
 export type RecordFilterOptions = {
   limit?: number;
-  offset?: number;
+  page?: number;
 } & FilterQuery<Record>;
 
 @Injectable()
@@ -24,7 +24,15 @@ export class RecordService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
   findAll(filterOptions: RecordFilterOptions) {
-    const { album, q, format, category, artist } = filterOptions;
+    const {
+      album,
+      q,
+      format,
+      category,
+      artist,
+      page = 1,
+      limit = 10,
+    } = filterOptions;
 
     const query: FilterQuery<Record> = {};
 
@@ -52,7 +60,8 @@ export class RecordService {
     if (category) {
       query.category = category;
     }
-    return this.recordRepository.find(query);
+    const skip = (page - 1) * limit;
+    return this.recordRepository.find(query, skip, limit);
   }
 
   async findByIdAndUpdate(id: string, updateRecordDto: UpdateRecordRequestDTO) {

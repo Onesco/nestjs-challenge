@@ -25,4 +25,19 @@ export class RecordFilterDto {
     enum: RecordCategory,
   })
   category?: RecordCategory;
+
+  @ApiPropertyOptional({
+    description: 'Page number for pagination (starts from 1)',
+    default: 1,
+    minimum: 1,
+  })
+  page?: number;
+
+  @ApiPropertyOptional({
+    description: 'Number of records per page',
+    default: 10,
+    minimum: 1,
+    maximum: 50,
+  })
+  limit?: number;
 }
