@@ -26,7 +26,6 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'), {
     index: 'index.html',
   });
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
 

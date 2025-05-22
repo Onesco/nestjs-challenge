@@ -108,3 +108,11 @@ npm run lint
 ```
 This command will show you any linting issues with your code.
 
+
+### admin Dashboard
+there is a simple dashboard to upload records and view records. Right it only works locally at the root of the page ('http://localhost:3000/') as the backend is not hosted. Onclick of each record will open a slide menu with all the list of tracks. try updating any record and with a valid mbid to see how it works.
+
+<img src="public/images/Screenshot 2025-05-22 at 14.49.46.png" />
+
+
+
