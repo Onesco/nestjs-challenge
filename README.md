@@ -19,7 +19,7 @@ $ cp .env.example .env
 ### Docker for MongoDB Emulator, Redis and Rabbit MQ
 To use all the docker containers Emulator, you can start it using Docker:
 ```
-npm run container:start
+npm run containers:start
 ```
 This will start the following docker contanains (MongoDB, Redis, and Rabbit MQ) instance running on your local machine. You can customize the settings in the Docker setup bsy modifying the docker-compose-mongo.yml if necessary. In the current configuration, you will have a MongoDB container running, which is accessible at localhost:27017.
 This mongo url will be necessary on the .env file, with example as follows:
